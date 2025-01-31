@@ -1,6 +1,6 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import pokemonsRouter from './routes/pokemons.js';  // Zorg ervoor dat het pad klopt
+import pokemonRouter from './routes/pokemons.js';  // Zorg ervoor dat het pad klopt
 
 const app = express();
 
@@ -21,9 +21,9 @@ app.get('/', (req, res) => {
 });
 
 // Gebruik de pokemonsRouter voor de /pokemon route
-app.use('/pokemon', pokemonsRouter);
+app.use('/pokemons', pokemonRouter);
 
 // Start de server
 app.listen(process.env.EXPRESS_PORT, () => {
-    console.log(`Server gestart op http://localhost:${process.env.EXPRESS_PORT}`);
+    console.log(`Server is gestart op http://localhost:${process.env.EXPRESS_PORT}`);
 });

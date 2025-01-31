@@ -3,76 +3,82 @@ import Pokemon from '../models/Pokemon.js';
 
 const router = express.Router();
 
-// GET /pokemon - Get all Pokémon
+// GET all Pokémon
 router.get('/', async (req, res) => {
     try {
         const pokemons = await Pokemon.find();
         res.json(pokemons);
     } catch (err) {
-        res.status(500).json({ error: 'Error fetching Pokémon', message: err });
+        res.status(500).json({ message: err.message });
     }
 });
 
-// GET /pokemon/:id - Get a specific Pokémon by ID
-router.get('/:id', async (req, res) => {
-    try {
-        const pokemon = await Pokemon.findById(req.params.id);
-        if (!pokemon) {
-            return res.status(404).json({ error: 'Pokémon not found' });
-        }
-        res.json(pokemon);
-    } catch (err) {
-        res.status(500).json({ error: 'Error fetching Pokémon', message: err });
-    }
-});
-
-// POST /pokemon - Add a new Pokémon
+// POST new Pokémon
 router.post('/', async (req, res) => {
+    const pokemon = new Pokemon({
+        name: req.body.name,
+        type: req.body.type,
+        description: req.body.description,
+        level: req.body.level
+    });
+
     try {
-        const { name, type, description, level, captured } = req.body;
-        if (!name || !type || !description) {
-            return res.status(400).json({ error: 'Name, type, and description are required' });
-        }
-        const newPokemon = new Pokemon({ name, type, description, level, captured });
-        await newPokemon.save();
+        const newPokemon = await pokemon.save();
         res.status(201).json(newPokemon);
     } catch (err) {
-        res.status(500).json({ error: 'Error adding Pokémon', message: err });
+        res.status(400).json({ message: err.message });
     }
 });
 
-// PUT /pokemon/:id - Update a Pokémon by ID
-router.put('/:id', async (req, res) => {
+// GET specific Pokémon
+router.get('/:id', getPokemon, (req, res) => {
+    res.json(res.pokemon);
+});
+
+// PUT (update) Pokémon
+router.put('/:id', getPokemon, async (req, res) => {
+    if (req.body.name != null) {
+        res.pokemon.name = req.body.name;
+    }
+    if (req.body.type != null) {
+        res.pokemon.type = req.body.type;
+    }
+    if (req.body.level != null) {
+        res.pokemon.level = req.body.level;
+    }
+
     try {
-        const { name, type, description, level, captured } = req.body;
-        if (!name || !type || !description) {
-            return res.status(400).json({ error: 'Name, type, and description are required' });
-        }
-        const updatedPokemon = await Pokemon.findByIdAndUpdate(
-            req.params.id,
-            { name, type, description, level, captured },
-            { new: true }
-        );
-        if (!updatedPokemon) {
-            return res.status(404).json({ error: 'Pokémon not found' });
-        }
+        const updatedPokemon = await res.pokemon.save();
         res.json(updatedPokemon);
     } catch (err) {
-        res.status(500).json({ error: 'Error updating Pokémon', message: err });
+        res.status(400).json({ message: err.message });
     }
 });
 
-// DELETE /pokemon/:id - Delete a Pokémon by ID
-router.delete('/:id', async (req, res) => {
+// DELETE Pokémon
+router.delete('/:id', getPokemon, async (req, res) => {
     try {
-        const deletedPokemon = await Pokemon.findByIdAndDelete(req.params.id);
-        if (!deletedPokemon) {
-            return res.status(404).json({ error: 'Pokémon not found' });
-        }
-        res.json({ message: 'Pokémon deleted successfully' });
+        await res.pokemon.deleteOne();
+        res.json({ message: 'Pokemon deleted' });
     } catch (err) {
-        res.status(500).json({ error: 'Error deleting Pokémon', message: err });
+        res.status(500).json({ message: err.message });
     }
 });
+
+// Middleware to get Pokemon by ID
+async function getPokemon(req, res, next) {
+    let pokemon;
+    try {
+        pokemon = await Pokemon.findById(req.params.id);
+        if (pokemon == null) {
+            return res.status(404).json({ message: 'Cannot find pokemon' });
+        }
+    } catch (err) {
+        return res.status(500).json({ message: err.message });
+    }
+
+    res.pokemon = pokemon;
+    next();
+}
 
 export default router;
