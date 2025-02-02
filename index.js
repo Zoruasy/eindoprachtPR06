@@ -1,29 +1,35 @@
 import express from 'express';
 import mongoose from 'mongoose';
-import pokemonRouter from './routes/pokemons.js';  // Zorg ervoor dat het pad klopt
+import pokemonsRouter from './routes/pokemons.js';  // Zorg ervoor dat deze router goed gedefinieerd is
 
 const app = express();
 
-// Verbinding maken met MongoDB
-mongoose.connect(`mongodb://127.0.0.1:27017/${process.env.DB_NAME}`)
-    .then(() => console.log('Verbonden met MongoDB'))
-    .catch(err => console.log('Fout bij verbinden met MongoDB:', err));
+// Verbinden met MongoDB
+mongoose.connect(`mongodb://127.0.0.1:27017/${process.env.DB_NAME}`);
 
-// Middleware voor JSON-gegevens
+// Middleware voor JSON-gegevens (express middleware)
 app.use(express.json());
 
-// Middleware voor urlencoded-gegevens
+// Middleware voor www-urlencoded-gegevens
 app.use(express.urlencoded({ extended: true }));
 
-// Root route (GET /)
-app.get('/', (req, res) => {
-    res.send('Welcome to the Pokémon API!');
+// Middleware om Accept header te controleren (voor 'application/json')
+app.use((req, res, next) => {
+    if (req.header('Accept') !== 'application/json' && req.method !== 'OPTIONS') {
+        return res.status(406).json({ error: 'Accept header must include application/json' });
+    }
+    next();
 });
 
-// Gebruik de pokemonsRouter voor de /pokemon route
-app.use('/pokemons', pokemonRouter);
+// Root route
+app.get('/', (req, res) => {
+    res.json({ message: 'Welcome to the Pokémon API!' });
+});
 
-// Start de server
+// Gebruik de Pokémon router voor '/pokemons' endpoint
+app.use('/pokemons', pokemonsRouter);  // Zorg ervoor dat pokemonsRouter goed is gedefinieerd
+
+// Server starten
 app.listen(process.env.EXPRESS_PORT, () => {
-    console.log(`Server is gestart op http://localhost:${process.env.EXPRESS_PORT}`);
+    console.log(`Server is gestart op poort ${process.env.EXPRESS_PORT}`);
 });
